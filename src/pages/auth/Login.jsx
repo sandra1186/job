@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { signInWithEmailAndPassword } from "firebase/auth";
+import { signInWithEmailAndPassword, sendPasswordResetEmail } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
 import { auth, db } from "../../firebase/config";
 
@@ -9,6 +9,8 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [resetMessage, setResetMessage] = useState("");
+  const [resetLoading, setResetLoading] = useState(false);
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
@@ -38,6 +40,24 @@ export default function Login() {
       setError("Failed to sign in. Please check your credentials.");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleForgotPassword = async () => {
+    if (!email) {
+      setError("Please enter your email address first, then click Forgot Password.");
+      return;
+    }
+    setResetLoading(true);
+    setError("");
+    setResetMessage("");
+    try {
+      await sendPasswordResetEmail(auth, email);
+      setResetMessage(`Password reset email sent to ${email}. Check your inbox.`);
+    } catch (err) {
+      setError("Could not send reset email. Make sure the email is correct.");
+    } finally {
+      setResetLoading(false);
     }
   };
 
@@ -97,6 +117,24 @@ export default function Login() {
               />
             </div>
           </div>
+
+          {/* Forgot Password */}
+          <div className="flex justify-end">
+            <button
+              type="button"
+              onClick={handleForgotPassword}
+              disabled={resetLoading}
+              className="text-sm text-blue-600 hover:text-blue-500 font-medium disabled:opacity-50"
+            >
+              {resetLoading ? "Sending..." : "Forgot password?"}
+            </button>
+          </div>
+
+          {resetMessage && (
+            <div className="bg-green-50 text-green-700 p-3 rounded-md text-sm text-center">
+              {resetMessage}
+            </div>
+          )}
 
           <div>
             <button
